@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Печать Тринадцати: Падение Света</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    body {
+      background: #0d0d1a;
+      color: #e0e0ff;
+      margin: 0;
+      padding: 16px;
+      line-height: 1.5;
+    }
+    .screen {
+      display: none;
+    }
+    .active {
+      display: block;
+    }
+    button {
+      background: #4a0072;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      margin: 6px 0;
+      width: 100%;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    button:hover {
+      background: #6a00a0;
+    }
+    input {
+      width: 100%;
+      padding: 10px;
+      margin: 8px 0;
+      border-radius: 6px;
+      border: 1px solid #555;
+      background: #1a1a2e;
+      color: white;
+    }
+    .log {
+      background: #161625;
+      padding: 12px;
+      border-radius: 8px;
+      margin: 12px 0;
+      max-height: 300px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+    }
+    .stats {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.9em;
+      margin: 10px 0;
+      color: #aaa;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Экран регистрации -->
+<div id="screen-register" class="screen active">
+  <h2>Печать Тринадцати: Падение Света</h2>
+  <p>Введи свой никнейм:</p>
+  <input type="text" id="nickname" placeholder="Никнейм" maxlength="16" />
+  <button onclick="register()">Подтвердить</button>
+</div>
+
+<!-- Главное меню -->
+<div id="screen-menu" class="screen">
+  <h2>Главное меню</h2>
+  <p>Привет, <span id="player-name">Игрок</span>!</p>
+  <button onclick="showScreen('screen-game')">Играть</button>
+  <button onclick="showScreen('screen-achievements')">Достижения</button>
+  <button onclick="showScreen('screen-changelog')">Журнал обновлений</button>
+</div>
+
+<!-- Журнал обновлений -->
+<div id="screen-changelog" class="screen">
+  <h2>Журнал обновлений</h2>
+  <div class="log">
+18.10.2025 — Версия 1.0 «Рождение Тьмы»
+
+Добавлено:
+- Система регистрации и главного меню
+- 5 локаций: Склеп, Пруд, Алтарь, Церковь, Пещера
+- Монстры: утопленник, русалка, Проклятый, зомби, пожиратель, Падший Архангел
+- Инвентарь и крафты
+- Предметы: Меч Роквальда (находка), Щит Архангела (находка), Череп-фонарь, Меч Инквизитора, Святая вода
+- Печать Тринадцати Архангелов → открывает Пещеру → даёт череп
+
+Исправлено:
+- Было: отсутствие логики переходов → Стало: реализована навигация
+- Было: невозможность взаимодействия → Стало: добавлены обыск и крафт
+
+
+18.10.2025 — Дополнение «Путь к Аду»
+
+Добавлено:
+- Кнопка «Меню» в игровом экране для возврата в главное меню
+- Базовая система достижений (интерфейс и хранение)
+
+Исправлено:
+- Было: нельзя выйти из игры без перезагрузки → Стало: добавлена кнопка «Меню»
+
+
+18.10.2025 — Дополнение «Печать и Суд»
+
+Добавлено:
+- Достижение «Открыл дверь в ад» — при первом входе в Пещеру после получения Печати
+- Достижение «Победил Падшего» — при победе над Падшим Архангелом
+- Достижение «Спаситель святых» — при победе над Проклятым
+- Достижение «Печать 13 Архангелов» — при получении Печати Тринадцати Архангелов
+
+Исправлено:
+- Было: достижения не отслеживались → Стало: реализована система разблокировки
+  </div>
+  <button onclick="showScreen('screen-menu')">Назад</button>
+</div>
+
+<!-- Достижения -->
+<div id="screen-achievements" class="screen">
+  <h2>Достижения</h2>
+  <div class="log" id="achievement-list">
+    Нет достижений.
+  </div>
+  <button onclick="showScreen('screen-menu')">Назад</button>
+</div>
+
+<!-- Игровой экран -->
+<div id="screen-game" class="screen">
+  <div class="stats">
+    <span>Здоровье: <span id="health">100</span>/100</span>
+    <span>Мана: <span id="mana">50</span>/50</span>
+  </div>
+
+  <div class="log" id="game-log">
+    Выберите локацию для начала.
+  </div>
+
+  <h3>Локации</h3>
+  <button onclick="goToLocation('Склеп')">Склеп</button>
+  <button onclick="goToLocation('Пруд')">Пруд</button>
+  <button onclick="goToLocation('Церковь')">Церковь</button>
+  <button onclick="goToLocation('Алтарь')">Алтарь</button>
+  <button id="cave-btn" onclick="goToLocation('Пещера')">Пещера</button>
+
+  <br />
+  <button onclick="openInventory()">Инвентарь</button>
+  <button onclick="openCraft()">Крафт</button>
+  <button onclick="showScreen('screen-menu')">Меню</button>
+</div>
+
+<!-- Инвентарь -->
+<div id="screen-inventory" class="screen">
+  <h2>Инвентарь</h2>
+  <div class="log" id="inventory-list">
+    Пусто.
+  </div>
+  <button onclick="showScreen('screen-game')">Назад</button>
+</div>
+
+<!-- Крафт -->
+<div id="screen-craft" class="screen">
+  <h2>Крафт</h2>
+  <div class="log">
+    <p>Доступные рецепты:</p>
+    <button onclick="craft('Череп-фонарь')">Череп-фонарь</button>
+    <button onclick="craft('Меч Инквизитора')">Меч Инквизитора</button>
+    <button onclick="craft('Святая вода')">Святая вода</button>
+    <p>Остальные предметы можно только найти.</p>
+  </div>
+  <button onclick="showScreen('screen-game')">Назад</button>
+</div>
+
+<!-- Обыск локации -->
+<div id="screen-search" class="screen">
+  <h2 id="search-title">Обыск: [локация]</h2>
+  <div class="log" id="search-result">
+    Ищете что-то полезное...
+  </div>
+  <button onclick="finishSearch()">Завершить</button>
+</div>
+
+<!-- Бой -->
+<div id="screen-fight" class="screen">
+  <h2 id="fight-monster">Бой с [монстр]</h2>
+  <div class="log" id="fight-log">
+    Бой начался!
+  </div>
+  <button onclick="attack()">Атаковать</button>
+  <button onclick="run()">Сбежать</button>
+</div>
+
+<script>
+  let playerName = "";
+  let health = 100;
+  let mana = 50;
+  let inventory = [];
+  let hasSeal = false;
+  let achievements = [];
+
+  const allAchievements = [
+    "Открыл дверь в ад",
+    "Победил Падшего",
+    "Спаситель святых",
+    "Печать 13 Архангелов"
+  ];
+
+  const locations = ["Склеп", "Пруд", "Церковь", "Алтарь", "Пещера"];
+  const monsters = {
+    "Склеп": ["зомби", "пожиратель"],
+    "Пруд": ["утопленник", "русалка"],
+    "Церковь": ["Проклятый"],
+    "Алтарь": ["Падший Архангел"],
+    "Пещера": []
+  };
+
+  const resources = {
+    "Склеп": ["кости", "ржавые клинки", "пыль забвения"],
+    "Пруд": ["ил", "пустые бутылки", "водоросли"],
+    "Церковь": ["бутылка с водой", "свечи душ", "рукоять меча", "серебряная сталь"],
+    "Алтарь": ["пепел", "осколки крыльев"],
+    "Пещера": ["череп"]
+  };
+
+  const craftRecipes = {
+    "Череп-фонарь": ["череп", "палка", "свеча душ"],
+    "Меч Инквизитора": ["святая вода", "серебряная сталь", "рукоять меча"],
+    "Святая вода": ["бутылка с водой", "освящение в церкви"]
+  };
+
+  let currentLocation = "";
+
+  function register() {
+    const nick = document.getElementById("nickname").value.trim();
+    if (!nick) {
+      alert("Введите никнейм!");
+      return;
+    }
+    playerName = nick;
+    document.getElementById("player-name").textContent = playerName;
+    showScreen("screen-menu");
+  }
+
+  function showScreen(id) {
+    document.querySelectorAll(".screen").forEach(el => el.classList.remove("active"));
+    document.getElementById(id).classList.add("active");
+
+    if (id === "screen-game") {
+      document.getElementById("cave-btn").disabled = !hasSeal;
+      updateStats();
+    } else if (id === "screen-achievements") {
+      updateAchievements();
+    }
+  }
+
+  function updateAchievements() {
+    const el = document.getElementById("achievement-list");
+    if (achievements.length === 0) {
+      el.textContent = "Нет достижений.";
+    } else {
+      el.innerHTML = achievements.map(a => `✅ ${a}`).join("<br>");
+    }
+  }
+
+  function unlockAchievement(name) {
+    if (!achievements.includes(name)) {
+      achievements.push(name);
+      updateAchievements();
+    }
+  }
+
+  function updateStats() {
+    document.getElementById("health").textContent = health;
+    document.getElementById("mana").textContent = mana;
+  }
+
+  function goToLocation(loc) {
+    currentLocation = loc;
+    const now = new Date();
+    const timeStr = formatDateTime(now);
+    let log = `${timeStr} — Вы вошли в: ${loc}.`;
+
+    if (loc === "Пещера" && hasSeal) {
+      unlockAchievement("Открыл дверь в ад");
+    }
+
+    // Шанс найти Меч Роквальда
+    if (loc === "Склеп" && Math.random() < 0.01 && !inventory.includes("Меч Роквальда")) {
+      addToInventory("Меч Роквальда");
+      log += `\n${timeStr} — Вы нашли: Меч Роквальда!`;
+    }
+
+    if (loc === "Алтарь" && inventory.includes("Падший Архангел побеждён")) {
+      log += `\n${timeStr} — Алтарь пуст. Печать у вас.`;
+    }
+
+    document.getElementById("game-log").textContent = log;
+
+    // Монстры
+    const locMonsters = monsters[loc];
+    if (locMonsters.length > 0 && loc !== "Алтарь") {
+      const monster = locMonsters[Math.floor(Math.random() * locMonsters.length)];
+      startFight(monster);
+      return;
+    }
+
+    if (loc === "Алтарь" && !inventory.includes("Падший Архангел побеждён")) {
+      startFight("Падший Архангел");
+      return;
+    }
+
+    // Обыск
+    if (loc !== "Пещера" || hasSeal) {
+      setTimeout(() => {
+        const btn = document.createElement("button");
+        btn.textContent = "Обыскать";
+        btn.onclick = () => searchLocation();
+        document.getElementById("game-log").innerHTML += "<br><br>";
+        document.getElementById("game-log").appendChild(btn);
+      }, 300);
+    }
+  }
+
+  function searchLocation() {
+    showScreen("screen-search");
+    const now = new Date();
+    const timeStr = formatDateTime(now);
+    document.getElementById("search-title").textContent = `Обыск: ${currentLocation} (${timeStr})`;
+    
+    let found = [];
+    if (currentLocation === "Пещера" && hasSeal) {
+      found = ["череп"];
+    } else if (resources[currentLocation]) {
+      const pool = resources[currentLocation];
+      if (Math.random() < 0.7) {
+        found.push(pool[Math.floor(Math.random() * pool.length)]);
+      }
+      if (Math.random() < 0.3) found.push("палка");
+      if (Math.random() < 0.2 && currentLocation === "Церковь") found.push("свеча душ");
+    }
+
+    if (found.length === 0) {
+      document.getElementById("search-result").textContent = `${timeStr} — Ничего не найдено.`;
+    } else {
+      found.forEach(item => addToInventory(item));
+      document.getElementById("search-result").textContent = `${timeStr} — Найдено: ${found.join(", ")}.`;
+    }
+  }
+
+  function finishSearch() {
+    showScreen("screen-game");
+  }
+
+  function addToInventory(item) {
+    if (!inventory.includes(item)) {
+      inventory.push(item);
+    }
+    updateInventoryDisplay();
+  }
+
+  function updateInventoryDisplay() {
+    const inv = document.getElementById("inventory-list");
+    if (inventory.length === 0) {
+      inv.textContent = "Пусто.";
+    } else {
+      inv.innerHTML = inventory.map(item => `- ${item}`).join("<br>");
+    }
+  }
+
+  function openInventory() {
+    updateInventoryDisplay();
+    showScreen("screen-inventory");
+  }
+
+  function openCraft() {
+    showScreen("screen-craft");
+  }
+
+  function craft(item) {
+    const now = new Date();
+    const timeStr = formatDateTime(now);
+    const recipe = craftRecipes[item];
+    if (!recipe) return;
+
+    if (item === "Святая вода") {
+      if (inventory.includes("бутылка с водой") && currentLocation === "Церковь") {
+        removeFromInventory("бутылка с водой");
+        addToInventory("святая вода");
+        alert(`${timeStr} — Создана Святая вода!`);
+      } else {
+        alert("Нужна бутылка с водой и вы должны быть в Церкви!");
+      }
+      return;
+    }
+
+    let canCraft = true;
+    for (let ing of recipe) {
+      if (!inventory.includes(ing)) {
+        canCraft = false;
+        break;
+      }
+    }
+
+    if (canCraft) {
+      for (let ing of recipe) {
+        removeFromInventory(ing);
+      }
+      addToInventory(item);
+      alert(`${timeStr} — Создано: ${item}!`);
+    } else {
+      alert("Не хватает ресурсов!");
+    }
+  }
+
+  function removeFromInventory(item) {
+    const index = inventory.indexOf(item);
+    if (index > -1) inventory.splice(index, 1);
+  }
+
+  function startFight(monster) {
+    showScreen("screen-fight");
+    const now = new Date();
+    const timeStr = formatDateTime(now);
+    document.getElementById("fight-monster").textContent = `Бой с ${monster} (${timeStr})`;
+    document.getElementById("fight-log").textContent = `${timeStr} — На вас напал: ${monster}!`;
+
+    window.currentMonster = monster;
+    window.monsterHP = monster === "Падший Архангел" ? 500 : 50;
+  }
+
+  function attack() {
+    const now = new Date();
+    const timeStr = formatDateTime(now);
+    const dmg = Math.floor(Math.random() * 30) + 10;
+    window.monsterHP -= dmg;
+    let log = `${timeStr} — Вы нанесли ${dmg} урона.`;
+
+    if (window.monsterHP <= 0) {
+      log += `\n${timeStr} — ${window.currentMonster} повержен!`;
+
+      if (window.currentMonster === "Падший Архангел") {
+        addToInventory("Падший Архангел побеждён");
+        addToInventory("Печать Тринадцати Архангелов");
+        hasSeal = true;
+        document.getElementById("cave-btn").disabled = false;
+        unlockAchievement("Победил Падшего");
+        unlockAchievement("Печать 13 Архангелов");
+
+        if (Math.random() < 0.05) {
+          addToInventory("Щит Архангела");
+          log += `\n${timeStr} — Вы получили: Щит Архангела!`;
+        }
+      } else if (window.currentMonster === "Проклятый") {
+        unlockAchievement("Спаситель святых");
+      }
+
+      document.getElementById("fight-log").textContent = log;
+      setTimeout(() => showScreen("screen-game"), 1500);
+      return;
+    }
+
+    const monsterDmg = Math.floor(Math.random() * 20) + 5;
+    health -= monsterDmg;
+    log += `\n${timeStr} — ${window.currentMonster} нанёс ${monsterDmg} урона.`;
+    if (health <= 0) {
+      log += `\n${timeStr} — Вы погибли...`;
+      document.getElementById("fight-log").textContent = log;
+      setTimeout(() => {
+        health = 100;
+        showScreen("screen-menu");
+      }, 2000);
+      return;
+    }
+
+    updateStats();
+    document.getElementById("fight-log").textContent = log;
+  }
+
+  function run() {
+    const now = new Date();
+    const timeStr = formatDateTime(now);
+    if (Math.random() < 0.5) {
+      document.getElementById("fight-log").textContent = `${timeStr} — Вы сбежали!`;
+      setTimeout(() => showScreen("screen-game"), 1000);
+    } else {
+      const dmg = Math.floor(Math.random() * 15) + 5;
+      health -= dmg;
+      document.getElementById("fight-log").textContent = `${timeStr} — Не удалось сбежать! Получено ${dmg} урона.`;
+      if (health <= 0) {
+        setTimeout(() => {
+          health = 100;
+          showScreen("screen-menu");
+        }, 2000);
+      }
+      updateStats();
+    }
+  }
+
+  function formatDateTime(date) {
+    const d = String(date.getDate()).padStart(2, '0');
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const y = date.getFullYear();
+    const hh = String(date.getHours()).padStart(2, '0');
+    const mm = String(date.getMinutes()).padStart(2, '0');
+    return `${d}.${m}.${y} ${hh}:${mm}`;
+  }
+</script>
+
+</body>
+</html>
